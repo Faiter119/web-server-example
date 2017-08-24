@@ -283,20 +283,46 @@ namespace SimpleWeb {
         }
 
         bool parse_request(std::shared_ptr<Request> request, std::istream& stream) const {
+            
             std::string line;
+            
             getline(stream, line);
-            size_t method_end;
-            if((method_end=line.find(' '))!=std::string::npos) {
-                size_t path_end;
-                if((path_end=line.find(' ', method_end+1))!=std::string::npos) {
-                    request->method=line.substr(0, method_end);
-                    request->path=line.substr(method_end+1, path_end-method_end-1);
+            
+            size_t method_end =line.find(' ');
+            
+            if( method_end != std::string::npos) {
+                
+                size_t path_end = line.find(' ', method_end+1);
+                
+                if(path_end != std::string::npos) {
+                    
+                    request -> method = line.substr(0, method_end);
+                    request -> path = line.substr(method_end+1, path_end-method_end-1);
 
-                    size_t protocol_end;
-                    if((protocol_end=line.find('/', path_end+1))!=std::string::npos) {
-                        if(line.substr(path_end+1, protocol_end-path_end-1)!="HTTP")
+                    size_t protocol_end = line.find('/', path_end+1);
+                    
+                    //std::cout << line << std::endl;
+                    
+                    std::string protocol = "";
+                    
+                    int i = 1;
+                    char current = line[path_end+i];
+                    
+                    // leser til slutten av HTTP/1.1, siden .length og greier ikke fungerte
+                    // Fikk det ikke til med substring, fikk noe newline tull på slutten
+                    while(isalpha(current) || isdigit(current) || current == '.' || current == '/'){
+                        protocol = protocol+current; // legger til neste char
+                        current = line[path_end + ++i]; // henter neste char
+                    }
+                    
+                    //std::cout << "Protocol: " << protocol << " - Line: "<< line << std::endl;
+                                             
+                    if(protocol_end != std::string::npos) {
+                        
+                        if( protocol != "HTTP/1.1" && protocol != "HTTP/1.0")
                             return false;
-                        request->http_version=line.substr(protocol_end+1, line.size()-protocol_end-2);
+                        
+                        request -> http_version = line.substr(protocol_end+1, line.size()-protocol_end-2);
                     }
                     else
                         return false;
